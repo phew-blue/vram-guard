@@ -2,6 +2,7 @@ package main
 
 import (
     "encoding/json"
+    "fmt"
     "net/http"
 )
 
@@ -34,7 +35,7 @@ func (g *Guard) CheckAllowlist(model string) bool {
 func (g *Guard) CheckVRAM(model string) (bool, error) {
     modelCfg, ok := g.cfg.LookupModel(model)
     if !ok {
-        return false, nil
+        return false, fmt.Errorf("model %q not in config", model)
     }
 
     resp, err := g.httpClient.Get(g.cfg.OllamaURL + "/api/ps")

@@ -88,3 +88,20 @@ func TestCheckVRAM_OllamaUnreachable(t *testing.T) {
         t.Error("expected fits=true when ps unreachable (fail open)")
     }
 }
+
+func TestCheckVRAM_UnknownModel(t *testing.T) {
+    srv := mockPSServer(nil)
+    defer srv.Close()
+
+    cfg := &Config{
+        OllamaURL: srv.URL,
+        MaxVRAMMb: 8192,
+        Models:    map[string]ModelConfig{},
+    }
+    g := NewGuard(cfg)
+
+    _, err := g.CheckVRAM("unknown:latest")
+    if err == nil {
+        t.Error("expected error for unknown model")
+    }
+}
