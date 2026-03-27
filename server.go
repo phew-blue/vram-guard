@@ -17,6 +17,7 @@ func buildMux(cfg *Config, guard *Guard) http.Handler {
 		log.Fatalf("parse ollama_url: %v", err)
 	}
 	proxy := httputil.NewSingleHostReverseProxy(target)
+	proxy.FlushInterval = -1
 
 	mux := http.NewServeMux()
 
@@ -41,7 +42,10 @@ func buildMux(cfg *Config, guard *Guard) http.Handler {
 				http.Error(w, "model not allowed", http.StatusForbidden)
 				return
 			}
-			fits, _ := guard.CheckVRAM(model)
+			fits, err := guard.CheckVRAM(model)
+			if err != nil {
+				log.Printf("CheckVRAM(%q): %v", model, err)
+			}
 			if !fits {
 				http.Error(w, "insufficient VRAM", http.StatusServiceUnavailable)
 				return
