@@ -27,7 +27,15 @@ func buildMux(cfg *Config, guard *Guard) http.Handler {
 
 	mux.HandleFunc("POST /api/pull", func(w http.ResponseWriter, r *http.Request) {
 		model, err := extractModel(r)
-		if err != nil || !guard.CheckAllowlist(model) {
+		if err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		if model == "" {
+			http.Error(w, "model is required", http.StatusBadRequest)
+			return
+		}
+		if !guard.CheckAllowlist(model) {
 			http.Error(w, "model not allowed", http.StatusForbidden)
 			return
 		}
@@ -38,13 +46,23 @@ func buildMux(cfg *Config, guard *Guard) http.Handler {
 		ep := ep
 		mux.HandleFunc("POST "+ep, func(w http.ResponseWriter, r *http.Request) {
 			model, err := extractModel(r)
-			if err != nil || !guard.CheckAllowlist(model) {
+			if err != nil {
+				http.Error(w, "bad request", http.StatusBadRequest)
+				return
+			}
+			if model == "" {
+				http.Error(w, "model is required", http.StatusBadRequest)
+				return
+			}
+			if !guard.CheckAllowlist(model) {
 				http.Error(w, "model not allowed", http.StatusForbidden)
 				return
 			}
 			fits, err := guard.CheckVRAM(model)
 			if err != nil {
 				log.Printf("CheckVRAM(%q): %v", model, err)
+				http.Error(w, "VRAM check failed", http.StatusInternalServerError)
+				return
 			}
 			if !fits {
 				http.Error(w, "insufficient VRAM", http.StatusServiceUnavailable)
