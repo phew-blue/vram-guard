@@ -4,6 +4,7 @@ import (
     "encoding/json"
     "fmt"
     "net/http"
+    "time"
 )
 
 type psModel struct {
@@ -21,7 +22,7 @@ type Guard struct {
 }
 
 func NewGuard(cfg *Config) *Guard {
-    return &Guard{cfg: cfg, httpClient: &http.Client{}}
+    return &Guard{cfg: cfg, httpClient: &http.Client{Timeout: 3 * time.Second}}
 }
 
 // CheckAllowlist returns true if the model is in the configured allowlist.
@@ -49,10 +50,11 @@ func (g *Guard) CheckVRAM(model string) (bool, error) {
         return true, nil // fail open on parse error
     }
 
-    var loadedMB int64
+    var loadedBytes int64
     for _, m := range ps.Models {
-        loadedMB += m.SizeVRAM / (1024 * 1024)
+        loadedBytes += m.SizeVRAM
     }
+    loadedMB := loadedBytes / (1024 * 1024)
 
     return int(loadedMB)+modelCfg.VRAMMb <= g.cfg.MaxVRAMMb, nil
 }

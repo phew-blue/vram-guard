@@ -72,9 +72,11 @@ func TestCheckVRAM_Overflow(t *testing.T) {
 }
 
 func TestCheckVRAM_OllamaUnreachable(t *testing.T) {
-    // When /api/ps is unreachable, allow through (Ollama itself will fail)
+    srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+    srv.Close() // immediately close so the URL is "connection refused"
+
     cfg := &Config{
-        OllamaURL: "http://127.0.0.1:19999", // nothing listening
+        OllamaURL: srv.URL,
         MaxVRAMMb: 8192,
         Models:    map[string]ModelConfig{"llama3.2:3b": {VRAMMb: 2000}},
     }
