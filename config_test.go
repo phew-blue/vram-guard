@@ -5,20 +5,29 @@ import (
 	"testing"
 )
 
+func writeTempConfig(t *testing.T, content string) string {
+	t.Helper()
+	f, err := os.CreateTemp("", "config*.yaml")
+	if err != nil {
+		t.Fatalf("CreateTemp: %v", err)
+	}
+	if _, err := f.WriteString(content); err != nil {
+		t.Fatalf("WriteString: %v", err)
+	}
+	f.Close()
+	t.Cleanup(func() { os.Remove(f.Name()) })
+	return f.Name()
+}
+
 func TestLoadConfig(t *testing.T) {
-	content := `
+	path := writeTempConfig(t, `
 ollama_url: http://localhost:11435
 max_vram_mb: 8192
 models:
   llama3.2:3b:
     vram_mb: 2000
-`
-	f, _ := os.CreateTemp("", "config*.yaml")
-	f.WriteString(content)
-	f.Close()
-	defer os.Remove(f.Name())
-
-	cfg, err := LoadConfig(f.Name())
+`)
+	cfg, err := LoadConfig(path)
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
@@ -31,24 +40,16 @@ models:
 }
 
 func TestLoadConfig_MissingOllamaURL(t *testing.T) {
-	f, _ := os.CreateTemp("", "config*.yaml")
-	f.WriteString("max_vram_mb: 8192\n")
-	f.Close()
-	defer os.Remove(f.Name())
-
-	_, err := LoadConfig(f.Name())
+	path := writeTempConfig(t, "max_vram_mb: 8192\n")
+	_, err := LoadConfig(path)
 	if err == nil {
 		t.Error("expected error for missing ollama_url")
 	}
 }
 
 func TestLoadConfig_MissingMaxVRAM(t *testing.T) {
-	f, _ := os.CreateTemp("", "config*.yaml")
-	f.WriteString("ollama_url: http://localhost:11435\n")
-	f.Close()
-	defer os.Remove(f.Name())
-
-	_, err := LoadConfig(f.Name())
+	path := writeTempConfig(t, "ollama_url: http://localhost:11435\n")
+	_, err := LoadConfig(path)
 	if err == nil {
 		t.Error("expected error for missing max_vram_mb")
 	}

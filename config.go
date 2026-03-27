@@ -29,8 +29,8 @@ func LoadConfig(path string) (*Config, error) {
 	if cfg.OllamaURL == "" {
 		return nil, fmt.Errorf("ollama_url is required")
 	}
-	if cfg.MaxVRAMMb == 0 {
-		return nil, fmt.Errorf("max_vram_mb is required")
+	if cfg.MaxVRAMMb <= 0 {
+		return nil, fmt.Errorf("max_vram_mb must be a positive integer")
 	}
 	return &cfg, nil
 }
